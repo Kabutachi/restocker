@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "resale-staging",
+  "name": "restocker",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
   "workers_dev": true,
@@ -14,8 +14,7 @@
     {
       "binding": "DB",
       "database_name": "resale",
-      // Replace with the id printed by: npx wrangler d1 create resale
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "a17dbdff-46d8-436f-88ab-46759d00e89c",
       "migrations_dir": "migrations"
     }
   ],

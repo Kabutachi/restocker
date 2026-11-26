@@ -44,7 +44,7 @@ Runs on Cloudflare's free tier: one Worker serves the page and the API, D1 store
 | `migrations/0001_init.sql` | D1 schema |
 | `public/` | Frontend: `index.html`, `app.js`, `style.css`, `login.html` |
 | `scripts/import.mjs` | One-time import from the original catalogue |
-| `wrangler.jsonc` | Worker `resale-staging`, D1 `resale`, R2 `resale-photos`, login rate limit |
+| `wrangler.jsonc` | Worker `restocker`, D1 `resale`, R2 `resale-photos`, login rate limit |
 
 ## Run locally
 
@@ -70,7 +70,7 @@ npx wrangler d1 create resale              # paste the printed id into wrangler.
 npx wrangler r2 bucket create resale-photos
 npx wrangler secret put SITE_PASSWORD      # at least 12 characters
 npm run db:migrate:remote
-npm run deploy                             # prints https://resale-staging.<account>.workers.dev
+npm run deploy                             # prints https://restocker.<account>.workers.dev
 ```
 
 R2 must be enabled in the Cloudflare dashboard first; this may ask for a payment card even on the free tier.
