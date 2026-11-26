@@ -1,0 +1,22 @@
+node_modules/
+.wrangler/
+dist/
+*.log
+.DS_Store
+Thumbs.db
+
+# Secrets: never commit. Only the example file is tracked.
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+*.pem
+*.key
+
+# Machine-specific Claude Code files
+.claude/launch.json
+.claude/settings.local.json
+
+# Imported artifact data (photos ~37 MB): not tracked
+import/data/

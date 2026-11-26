@@ -1,0 +1,2 @@
+# Copy to .dev.vars (git-ignored) for `npm run dev`. Use a throwaway local password, not the real one.
+SITE_PASSWORD=local-dev-password
