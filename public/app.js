@@ -570,11 +570,115 @@ $("phdel").onclick = async () => {
   }
 };
 
+// ---- navigation + sold stats ---------------------------------------------------
+let loaded = false;
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const pct = (n) => (n == null ? "—" : Math.round(n * 100) + "%");
+
+function metric(key, label, value, sub, cls) {
+  return `<div class="mcard" data-testid="metric-${key}"><span class="lbl">${esc(label)}</span>` +
+    `<b${cls ? ` class="${cls}"` : ""}>${esc(value)}</b>${sub ? `<span class="sub">${esc(sub)}</span>` : ""}</div>`;
+}
+
+function monthChart(sold) {
+  const now = new Date(), months = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ key: d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0"), m: d.getMonth(), y: d.getFullYear(), v: 0, n: 0 });
+  }
+  for (const x of sold) {
+    const b = months.find((o) => x.sold_at && x.sold_at.slice(0, 7) === o.key);
+    if (b) { b.v += x.sell_price ?? 0; b.n++; }
+  }
+  const max = Math.max(1, ...months.map((o) => o.v)), H = 140, W = 40;
+  const bars = months.map((o, i) => {
+    const h = o.v > 0 ? Math.max(2, Math.round((o.v / max) * H)) : 1, x = i * W;
+    const label = MON[o.m] + (o.m === 0 || i === 0 ? " " + o.y : "");
+    return `<g class="bar" data-month="${o.key}" data-value="${o.v}" data-items="${o.n}">` +
+      `<title>${esc(MON[o.m] + " " + o.y + ": " + eur(o.v) + ", " + o.n + (o.n === 1 ? " item" : " items"))}</title>` +
+      `<rect class="${o.v > 0 ? "" : "zero"}" x="${x + 6}" y="${20 + H - h}" width="${W - 12}" height="${h}" rx="2"/>` +
+      (o.v > 0 ? `<text class="val" x="${x + W / 2}" y="${16 + H - h}" text-anchor="middle">${esc(eur(o.v))}</text>` : "") +
+      `<text x="${x + W / 2}" y="${H + 36}" text-anchor="middle">${esc(label)}</text></g>`;
+  }).join("");
+  return `<div class="chartcard" data-testid="chart-month"><h3>Revenue per month</h3><div class="scroll">` +
+    `<svg viewBox="0 0 ${12 * W} ${H + 46}" role="img" aria-label="Revenue per month, last 12 months">${bars}</svg></div></div>`;
+}
+
+function typeChart(sold) {
+  const by = new Map();
+  for (const x of sold) {
+    if (!x.sell_price) continue;
+    const label = TYPE_NAME[x.type] || "Untyped";
+    by.set(label, (by.get(label) || 0) + x.sell_price);
+  }
+  const rows = [...by].sort((a, b) => b[1] - a[1]);
+  if (!rows.length) return "";
+  const max = rows[0][1], RH = 28, LW = 120, BW = 270;
+  const bars = rows.map(([label, v], i) => {
+    const w = Math.max(2, Math.round((v / max) * BW)), y = i * RH;
+    return `<g class="bar" data-label="${esc(label)}" data-value="${v}"><title>${esc(label + ": " + eur(v))}</title>` +
+      `<text x="0" y="${y + 17}">${esc(label)}</text><rect x="${LW}" y="${y + 4}" width="${w}" height="${RH - 10}" rx="2"/>` +
+      `<text class="val" x="${LW + w + 6}" y="${y + 17}">${esc(eur(v))}</text></g>`;
+  }).join("");
+  return `<div class="chartcard" data-testid="chart-type"><h3>Revenue by type</h3><div class="scroll">` +
+    `<svg viewBox="0 0 480 ${rows.length * RH}" role="img" aria-label="Revenue by item type">${bars}</svg></div></div>`;
+}
+
+function renderSold() {
+  const out = $("soldbody");
+  if (!loaded) { out.innerHTML = ""; return; }
+  const sold = ITEMS.filter((x) => x.status === "sold");
+  if (!sold.length) { out.innerHTML = `<p class="empty" data-testid="sold-empty">No sales yet</p>`; return; }
+  const sum = (list, f) => list.reduce((t, x) => t + f(x), 0);
+  const priced = sold.filter((x) => x.sell_price != null);
+  const revenue = sum(priced, (x) => x.sell_price);
+  const withCost = sold.filter((x) => x.sell_price != null && x.buy_price != null);
+  const profit = withCost.length ? sum(withCost, (x) => x.sell_price - x.buy_price) : null;
+  const forSale = ITEMS.filter((x) => x.status === "to_list" || x.status === "listed").length;
+  const both = sold.filter((x) => x.sell_price != null && x.list_price);
+  const listSum = sum(both, (x) => x.list_price);
+  out.innerHTML = `<div class="mgrid">` +
+    metric("sold", "Items sold", String(sold.length)) +
+    metric("revenue", "Revenue", eur(revenue)) +
+    metric("profit", "Profit", eur(profit), profit == null ? "" : withCost.length + " with cost", profit == null ? "" : profit >= 0 ? "pos" : "neg") +
+    metric("avg", "Average sale price", priced.length ? eur(Math.round((revenue / priced.length) * 100) / 100) : "—") +
+    metric("sellthrough", "Sell-through", pct(sold.length / (sold.length + forSale)), `${sold.length} sold of ${sold.length + forSale}`) +
+    metric("salevslist", "Sale vs list price", listSum ? pct(sum(both, (x) => x.sell_price) / listSum) : "—") +
+    metric("no-price", "Sold without price", String(sold.length - priced.length)) +
+    metric("no-date", "Sold without date", String(sold.filter((x) => !x.sold_at).length)) +
+    `</div>` + monthChart(sold) + typeChart(sold);
+}
+
+function route() {
+  const isSold = location.hash === "#/sold";
+  $("soldview").hidden = !isSold;
+  document.querySelector("header").hidden = isSold;
+  document.querySelector("main").hidden = isSold;
+  const cur = isSold ? $("nav-sold") : $("nav-cat"), other = isSold ? $("nav-cat") : $("nav-sold");
+  cur.setAttribute("aria-current", "page");
+  other.removeAttribute("aria-current");
+  document.title = isSold ? "Sold stats – Resale Stock" : "Resale Stock";
+  if (isSold) renderSold();
+}
+function setMenu(open) {
+  $("mainnav").classList.toggle("open", open);
+  $("menubtn").setAttribute("aria-expanded", String(open));
+}
+$("menubtn").onclick = () => setMenu(!$("mainnav").classList.contains("open"));
+$("mainnav").addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && $("mainnav").classList.contains("open") && !dlg.open) { setMenu(false); $("menubtn").focus(); }
+});
+window.addEventListener("hashchange", route);
+route();
+
 // ---- start ---------------------------------------------------------------------
 (async () => {
   try {
     ITEMS = await api("/api/items");
+    loaded = true;
     render();
+    route();
   } catch (e) {
     $("empty").hidden = false;
     $("empty").textContent = "Could not load items: " + e.message;

@@ -12,7 +12,18 @@ Runs on Cloudflare's free tier: one Worker serves the page and the API, D1 store
 - **Prices:** list, minimum, bought-for and sold-for prices. Profit is worked out automatically.
 - **Vinted text:** one text box with a **Copy** button.
 - **Photos:** resized in the browser before upload (1600 px plus a 480 px thumbnail, WebP or JPEG), then stored in R2. They can be reordered and deleted.
+- **Sold stats:** sidebar entry (hash route `#/sold`) with items sold, revenue, profit, average sale price, sell-through, sale vs list price, data-quality counts, and charts for revenue per month (last 12) and revenue by type. All figures are computed in the browser.
 - **Phone layout:** two cards per row; the header scrolls away on small screens.
+
+## Run E2E tests
+
+Playwright starts `wrangler dev` against a local D1 database (see `playwright.config.ts`) and logs in with the password from `.dev.vars`. The tests reset the local items table, so never point them at real data.
+
+```powershell
+npm install
+npx playwright install chromium    # first time only
+npm run e2e
+```
 
 ## Stack
 

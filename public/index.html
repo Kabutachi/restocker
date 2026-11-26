@@ -11,6 +11,18 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+<div class="shell">
+<aside class="side">
+  <div class="side-top">
+    <span class="brand">Resale Stock</span>
+    <button class="btn" id="menubtn" type="button" aria-expanded="false" aria-controls="mainnav">Menu</button>
+  </div>
+  <nav id="mainnav" aria-label="Main">
+    <a href="#/" id="nav-cat">Catalogue</a>
+    <a href="#/sold" id="nav-sold">Sold stats</a>
+  </nav>
+</aside>
+<div class="content">
 <header>
   <div class="wrap">
     <div class="top">
@@ -50,6 +62,13 @@
   <div class="grid" id="grid"></div>
   <p class="empty" id="empty" hidden>No items match these filters.</p>
 </div></main>
+
+<section id="soldview" hidden><div class="wrap">
+  <h2 id="soldtitle" tabindex="-1">Sold stats</h2>
+  <div id="soldbody"></div>
+</div></section>
+</div>
+</div>
 
 <!-- item: photos + edit form -->
 <dialog id="dlg" aria-label="Item">
